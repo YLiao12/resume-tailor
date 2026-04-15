@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ChevronLeft, Sparkles, Loader2, Copy, Check, FileDown } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { exportToPDF } from '@/utils/export'
+import { getApiKey } from '@/utils/storage'
+import { callOpenRouter } from '@/utils/ai'
 
 interface JD {
   id: string
@@ -31,8 +33,6 @@ interface Resume {
   is_base_resume: boolean
 }
 
-const OPENROUTER_API_KEY = localStorage.getItem('openrouter_api_key') || ''
-
 export default function JDAnalyzer() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -47,8 +47,7 @@ export default function JDAnalyzer() {
   const [activeTab, setActiveTab] = useState('jd')
   const [copied, setCopied] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
-  const resumeRef = useRef<HTMLDivElement>(null)
-  const coverRef = useRef<HTMLDivElement>(null)
+  const [apiKey, setApiKey] = useState(getApiKey())
 
   useEffect(() => {
     if (id) {
@@ -94,7 +93,8 @@ export default function JDAnalyzer() {
   }
 
   const analyzeJD = async () => {
-    if (!OPENROUTER_API_KEY) {
+    const key = getApiKey()
+    if (!key) {
       alert('Please set your OpenRouter API key in settings')
       return
     }
@@ -103,19 +103,8 @@ export default function JDAnalyzer() {
     const currentJD = saveJD()
 
     try {
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': window.location.href,
-          'X-Title': 'Resume Tailor',
-        },
-        body: JSON.stringify({
-          model: 'nvidia/nemotron-3-super-120b-a12b:free',
-          messages: [{
-            role: 'user',
-            content: `You are a professional recruiter. Analyze the following job description and extract key information. Return ONLY valid JSON, no extra text.
+      const content = await callOpenRouter(
+        `You are a professional recruiter. Analyze the following job description and extract key information. Return ONLY valid JSON, no extra text.
 
 JD:
 ${jdContent}
@@ -129,14 +118,10 @@ Return this exact JSON structure:
   "responsibility_keywords": ["verb phrase1", "verb phrase2"],
   "tone_keywords": ["keyword1", "keyword2"],
   "key_requirements": ["requirement1", "requirement2"]
-}`
-          }],
-          temperature: 0.3,
-        }),
-      })
+}`,
+        0.3
+      )
 
-      const data = await response.json()
-      const content = data.choices[0].message.content
       const parsed = JSON.parse(content.replace(/```json\n?|```\n?/g, '').trim())
 
       const updatedJD: JD = {
@@ -171,9 +156,14 @@ Return this exact JSON structure:
       return
     }
 
+    const key = getApiKey()
+    if (!key) {
+      alert('Please set your OpenRouter API key')
+      return
+    }
+
     setIsGenerating(true)
 
-    // Get base resume
     const storedResumes = localStorage.getItem('resumes')
     const resumes: Resume[] = storedResumes ? JSON.parse(storedResumes) : []
     const baseResume = resumes.find(r => r.is_base_resume) || resumes[0]
@@ -192,19 +182,8 @@ Return this exact JSON structure:
     ].join('\n')
 
     try {
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': window.location.href,
-          'X-Title': 'Resume Tailor',
-        },
-        body: JSON.stringify({
-          model: 'nvidia/nemotron-3-super-120b-a12b:free',
-          messages: [{
-            role: 'user',
-            content: `You are an expert resume writer. Given the user's base resume and JD keywords, generate an optimized resume tailored to the target job.
+      const generated = await callOpenRouter(
+        `You are an expert resume writer. Given the user's base resume and JD keywords, generate an optimized resume tailored to the target job.
 
 STRICT RULES:
 1. Never invent experience, skills, or achievements the user does not have
@@ -223,14 +202,10 @@ TARGET JOB:
 Company: ${jd.company_name}
 Position: ${jd.job_title}
 
-Generate a complete, professional resume in Markdown format. Return ONLY the resume content, no extra text.`
-          }],
-          temperature: 0.5,
-        }),
-      })
+Generate a complete, professional resume in Markdown format. Return ONLY the resume content, no extra text.`,
+        0.5
+      )
 
-      const data = await response.json()
-      const generated = data.choices[0].message.content
       setGeneratedResume(generated)
       setActiveTab('resume')
     } catch (error) {
@@ -247,6 +222,12 @@ Generate a complete, professional resume in Markdown format. Return ONLY the res
       return
     }
 
+    const key = getApiKey()
+    if (!key) {
+      alert('Please set your OpenRouter API key')
+      return
+    }
+
     setIsGenerating(true)
 
     const storedResumes = localStorage.getItem('resumes')
@@ -260,19 +241,8 @@ Generate a complete, professional resume in Markdown format. Return ONLY the res
     }
 
     try {
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': window.location.href,
-          'X-Title': 'Resume Tailor',
-        },
-        body: JSON.stringify({
-          model: 'nvidia/nemotron-3-super-120b-a12b:free',
-          messages: [{
-            role: 'user',
-            content: `Write a professional cover letter for the following job application.
+      const generated = await callOpenRouter(
+        `Write a professional cover letter for the following job application.
 
 JOB DESCRIPTION:
 ${jd.raw_content}
@@ -290,14 +260,10 @@ REQUIREMENTS:
 Company: ${jd.company_name}
 Position: ${jd.job_title}
 
-Return ONLY the cover letter text, no extra formatting or explanations.`
-          }],
-          temperature: 0.6,
-        }),
-      })
+Return ONLY the cover letter text, no extra formatting or explanations.`,
+        0.6
+      )
 
-      const data = await response.json()
-      const generated = data.choices[0].message.content
       setGeneratedCoverLetter(generated)
       setActiveTab('cover')
     } catch (error) {
@@ -353,6 +319,14 @@ Return ONLY the cover letter text, no extra formatting or explanations.`
     }
   }
 
+  const handleSetApiKey = () => {
+    const key = prompt('Enter your OpenRouter API key:')
+    if (key) {
+      localStorage.setItem('openrouter_api_key', key)
+      setApiKey(key)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -365,14 +339,8 @@ Return ONLY the cover letter text, no extra formatting or explanations.`
             </Button>
             <h1 className="text-lg font-semibold">JD Analyzer & Resume Generator</h1>
           </div>
-          {!OPENROUTER_API_KEY && (
-            <Button variant="outline" size="sm" onClick={() => {
-              const key = prompt('Enter your OpenRouter API key:')
-              if (key) {
-                localStorage.setItem('openrouter_api_key', key)
-                window.location.reload()
-              }
-            }}>
+          {!apiKey && (
+            <Button variant="outline" size="sm" onClick={handleSetApiKey}>
               Set API Key
             </Button>
           )}

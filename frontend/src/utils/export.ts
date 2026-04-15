@@ -28,25 +28,27 @@ export async function exportToPDF(elementId: string, filename: string) {
   const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight)
   
   const imgX = (pdfWidth - imgWidth * ratio) / 2
-  let imgY = 10
-  
-  // Add image to PDF
-  pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio)
-  
-  // If content is taller than one page, add more pages
+  const scaledWidth = imgWidth * ratio
   const scaledHeight = imgHeight * ratio
-  if (scaledHeight > pdfHeight - 20) {
+  
+  // If content fits on one page
+  if (scaledHeight <= pdfHeight - 20) {
+    pdf.addImage(imgData, 'PNG', imgX, 10, scaledWidth, scaledHeight)
+  } else {
+    // Multi-page handling
     let heightLeft = scaledHeight
-    let position = 0
+    let position = 10
     
-    pdf.addImage(imgData, 'PNG', imgX, position, imgWidth * ratio, imgHeight * ratio)
-    heightLeft -= pdfHeight
+    // First page
+    pdf.addImage(imgData, 'PNG', imgX, position, scaledWidth, scaledHeight)
+    heightLeft -= (pdfHeight - 20)
     
+    // Additional pages
     while (heightLeft > 0) {
-      position = heightLeft - scaledHeight
       pdf.addPage()
-      pdf.addImage(imgData, 'PNG', imgX, position, imgWidth * ratio, imgHeight * ratio)
-      heightLeft -= pdfHeight
+      position = -((scaledHeight - heightLeft) - 10)
+      pdf.addImage(imgData, 'PNG', imgX, position, scaledWidth, scaledHeight)
+      heightLeft -= (pdfHeight - 20)
     }
   }
   
