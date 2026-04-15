@@ -1,63 +1,67 @@
 # Resume Tailor
 
-AI-Powered Resume & Cover Letter Generator
+AI-Powered Resume & Cover Letter Generator - Pure Frontend Version
 
-An intelligent tool that helps you tailor your resume for specific job descriptions using AI. No login required - all data is stored locally in your browser.
+A fully client-side tool that helps you tailor your resume for specific job descriptions using AI. All data is stored locally in your browser - no server, no login, no data leaves your device.
 
 ## Features
 
 - ✨ **AI-Powered Resume Tailoring** - Automatically customize your resume based on job descriptions
-- 🤖 **JD Analysis** - Extract key skills and requirements from job postings
+- 🤖 **JD Analysis** - Extract key skills and requirements from job postings using AI
 - 📝 **Cover Letter Generation** - Generate personalized cover letters
-- 💾 **Local Storage** - All your data stays in your browser (no cloud, no login)
+- 💾 **100% Local Storage** - All data stays in your browser (localStorage)
 - 📄 **PDF Export** - Export tailored resumes and cover letters as PDF
 - 🎨 **Markdown Editor** - Edit resumes with familiar Markdown syntax
 - 🔄 **Resume Management** - Create, edit, duplicate, and delete multiple resumes
+- 🔑 **API Key Management** - Your OpenRouter API key is stored locally
 
 ## Quick Start
 
-### Using Docker (Recommended)
+### Option 1: Direct Open (No Build Required)
+Simply open `index.html` in your browser after building once, or use the live version.
 
-```bash
-# Clone the repository
-git clone <repository-url>
-cd resume-tailor
+### Option 2: Development Server
 
-# Start the application
-docker-compose up -d
-
-# Access the application
-# Frontend: http://localhost:5173
-# API Docs: http://localhost:8000/docs
-```
-
-### Manual Setup
-
-#### Backend
-```bash
-cd backend
-pip install -e ".[dev]"
-uvicorn app.main:app --reload
-```
-
-#### Frontend
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
+Access at http://localhost:5173
+
+### Option 3: Build for Production
+
+```bash
+cd frontend
+npm install
+npm run build
+```
+
+Then serve the `dist` folder with any static file server.
+
 ## Usage Guide
 
-### 1. Create Your Base Resume
+### 1. Set Your API Key
 
-1. Open http://localhost:5173
-2. You'll see a default resume template
-3. Click on the resume card to edit
-4. Replace the template with your actual information
-5. Check "This is my base resume" if this is your main resume
+On first use, click **"Set API Key"** and enter your OpenRouter API key:
+1. Visit [openrouter.ai](https://openrouter.ai)
+2. Create a free account
+3. Go to Settings → API Keys
+4. Create a new key and copy it
+5. Paste into the app
 
-### 2. Analyze a Job Description
+Your API key is stored only in your browser's localStorage.
+
+### 2. Create Your Base Resume
+
+1. Open the app (you'll see a default resume template)
+2. Click on the resume card to edit
+3. Replace the template with your actual information
+4. Check "This is my base resume" if this is your main resume
+5. All changes are auto-saved to localStorage
+
+### 3. Analyze a Job Description
 
 1. Click **"JD Analyzer"** button in the top right
 2. Fill in:
@@ -70,9 +74,7 @@ npm run dev
    - Preferred Skills (gray badges)
    - Key Responsibilities (outlined badges)
 
-> **Note**: First time use requires an OpenRouter API key. Click "Set API Key" and enter your key (get one free at [openrouter.ai](https://openrouter.ai))
-
-### 3. Generate Tailored Resume
+### 4. Generate Tailored Resume
 
 1. After JD analysis, click **"Generate Resume"**
 2. AI will create a customized version of your base resume
@@ -80,113 +82,92 @@ npm run dev
    - Naturally weave in JD keywords
    - Use strong action verbs
    - Match the job requirements
-4. Review the generated content in the preview tab
+4. Review in the preview tab
 
-### 4. Generate Cover Letter
+### 5. Generate Cover Letter
 
 1. Click **"Generate Cover Letter"**
-2. AI creates a personalized cover letter based on:
-   - The job description
-   - Your background from the base resume
+2. AI creates a personalized cover letter
 3. Covers your relevant experience and enthusiasm for the role
 
-### 5. Export Your Documents
+### 6. Export Your Documents
 
-#### From JD Analyzer:
-- Click **PDF** button to export generated resume/cover letter
-- Click **Copy** button to copy content to clipboard
-- Click **Save** to add generated resume to your collection
-
-#### From Resume Editor:
-- Click **PDF** to export as PDF
-- Click **MD** to export as Markdown
-- Click **TXT** to export as plain text
-
-### 6. Manage Your Resumes
-
-On the Dashboard:
-- **New Resume**: Create a new resume from scratch
-- **Duplicate**: Copy an existing resume
-- **Delete**: Remove a resume
-- **Edit**: Modify resume content
+- **PDF**: Click PDF button to export as PDF
+- **Copy**: Click Copy button to copy content
+- **Save**: Save generated resume to your local collection
 
 ## Data Storage
 
 All data is stored in your browser's **localStorage**:
-- Resumes (including base resume and tailored versions)
-- Job descriptions and analysis results
-- OpenRouter API key
+- `resumes` - Your resume collection
+- `jds` - Job descriptions and analysis results
+- `openrouter_api_key` - Your API key
 
-**To backup your data**: Use browser's developer tools to export localStorage.
+### Backup Your Data
 
-**To clear all data**: Clear browser cookies and site data for localhost:5173.
+To backup, open browser DevTools (F12) → Application → Local Storage → Copy the values.
 
-## Getting OpenRouter API Key
+### Clear All Data
 
-1. Visit [openrouter.ai](https://openrouter.ai)
-2. Create a free account
-3. Go to Settings → API Keys
-4. Create a new key
-5. Copy and paste it into the app when prompted
-
-> The free tier includes access to models like `nvidia/nemotron-3-super-120b-a12b:free` with rate limits.
-
-## Project Structure
-
-```
-resume-tailor/
-├── backend/              # FastAPI backend
-│   ├── app/
-│   │   ├── api/         # API routes
-│   │   ├── core/        # Security & encryption
-│   │   ├── db/          # Database models
-│   │   ├── models/      # SQLAlchemy models
-│   │   └── schemas/     # Pydantic schemas
-│   ├── Dockerfile
-│   └── pyproject.toml
-├── frontend/            # React + TypeScript frontend
-│   ├── src/
-│   │   ├── components/  # UI components
-│   │   ├── pages/       # Page components
-│   │   └── utils/       # Utilities
-│   ├── Dockerfile
-│   └── package.json
-├── docker-compose.yml
-├── SPEC.md              # Detailed specification
-└── README.md           # This file
-```
+To reset everything, clear browser cookies and site data for this domain.
 
 ## Tech Stack
 
-- **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui
-- **Backend**: Python 3.11, FastAPI, SQLAlchemy, PostgreSQL
-- **AI**: OpenRouter API (supports multiple LLM providers)
+- **Frontend**: React 18, TypeScript, Vite, Tailwind CSS
+- **UI Components**: shadcn/ui (custom implementation)
+- **AI**: OpenRouter API (client-side calls)
 - **PDF**: html2canvas + jsPDF
-- **Deployment**: Docker, Docker Compose
+- **Storage**: Browser localStorage
+
+## Architecture
+
+```
+resume-tailor/
+├── frontend/
+│   ├── src/
+│   │   ├── components/ui/     # UI components
+│   │   ├── pages/             # Page components
+│   │   │   ├── Dashboard.tsx      # Resume list
+│   │   │   ├── ResumeNew.tsx      # Create resume
+│   │   │   ├── ResumeEdit.tsx     # Edit + export
+│   │   │   └── JDAnalyzer.tsx     # JD analysis + AI generation
+│   │   ├── utils/
+│   │   │   ├── cn.ts         # Tailwind utilities
+│   │   │   └── export.ts     # PDF export functions
+│   │   ├── App.tsx           # Routes
+│   │   └── main.tsx          # Entry
+│   ├── package.json
+│   └── vite.config.ts
+└── README.md
+```
+
+## Privacy & Security
+
+- **No Server**: This is a pure frontend application
+- **No Tracking**: No analytics, no cookies
+- **Local Only**: All data stays in your browser
+- **Direct API Calls**: AI requests go directly from your browser to OpenRouter
+- **You Control Your Data**: Clear localStorage anytime to delete everything
 
 ## Development
 
-### Running Tests
 ```bash
-# Backend
-cd backend
-pytest
+# Install dependencies
+npm install
 
-# Frontend
-cd frontend
-npm test
-```
+# Start dev server
+npm run dev
 
-### Code Formatting
-```bash
-# Backend
-cd backend
-black app/
-ruff check app/
+# Build for production
+npm run build
 
-# Frontend
-cd frontend
+# Preview production build
+npm run preview
+
+# Lint
 npm run lint
+
+# Format
 npm run format
 ```
 
@@ -194,11 +175,7 @@ npm run format
 
 MIT License - feel free to use for personal or commercial projects.
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
 ## Acknowledgments
 
-- Built with [shadcn/ui](https://ui.shadcn.com/) components
-- Powered by [OpenRouter](https://openrouter.ai/) for AI capabilities
+- UI components based on [shadcn/ui](https://ui.shadcn.com/)
+- AI powered by [OpenRouter](https://openrouter.ai/)
